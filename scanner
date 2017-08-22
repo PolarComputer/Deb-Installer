@@ -1,0 +1,195 @@
+#!/bin/sh
+user=$(whoami)
+function gatherDebInfo() {
+  description=$(dpkg-deb -f "$FILES" Description) && echo "$description"
+  package=$(dpkg-deb -f "$FILES" Package) && echo "$package"
+  version=$(dpkg-deb -f "$FILES" Version) && echo "$version"
+  installedSize=$(dpkg-deb -f "$FILES" Installed-Size) && echo "$installedSize"
+  maintainer=$(dpkg-deb -f "$FILES" Maintainer) && echo "$maintainer"
+	category=$(dpkg-deb -f "$FILES" Section) && echo "$category"
+}
+function fixLenth() {
+  if [ ${#description} -ge 300 ]; then
+    description=$(echo "${description:0:300}...")
+  else
+    description=$(echo "${description:0:300}")
+  fi
+
+	#if [ ${#package} -ge 21 ]; then
+	#	package=$(echo "${package:0:17}...")
+	#else
+	#	package=$(echo "${package:0:20}")
+	#fi
+
+	if [ ${#maintainer} -ge 41 ]; then
+		maintainer=$(echo "${maintainer:0:37}...")
+	else
+		maintainer=$(echo "${maintainer:0:40}")
+	fi
+}
+function cleanCharacters() {
+  maintainer=$(echo "${maintainer//<}")
+  maintainer=$(echo "${maintainer//>}")
+  maintainer=$(echo "${maintainer//&}")
+
+  package=$(echo "${package//<}")
+  package=$(echo "${package//>}")
+  package=$(echo "${package//&}")
+
+  version=$(echo "${version//<}")
+  version=$(echo "${version//>}")
+  version=$(echo "${version//&}")
+
+  installedSize=$(echo "${installedSize//<}")
+  installedSize=$(echo "${installedSize//>}")
+  installedSize=$(echo "${installedSize//&}")
+
+  description=$(echo "${description//<}")
+  description=$(echo "${description//>}")
+  description=$(echo "${description//&}")
+}
+function virusScan() {
+  virusScanResults="uncomplete"
+}
+function searchIcon() {
+	echo $package
+	iconEX=$(find '/usr/share/icons' -name "*$package*")
+	echo $iconEX
+	if [ "$iconEX" == "" ];then
+		iconEX=false
+	else
+		iconEX=true
+	fi
+	echo $iconEX
+}
+function categoryIcon() {
+	if   [ "$category" == "games" ]; then #set icon for notifaction
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-games.png")
+	elif [ "$category" == "gnome" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-utilities.png")
+	elif [ "$category" == "default" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/preferences-desktop-default-applications.png")
+	elif [ "$category" == "web" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-internet.png")
+	elif [ "$category" == "graphics" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-graphics.png")
+	elif [ "$category" == "accessories" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-accessories.png")
+	elif [ "$category" == "development" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-development.png")
+	elif [ "$category" == "engineering" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-engineering.png")
+	elif [ "$category" == "fonts" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-font.png")
+	elif [ "$category" == "internet" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-internet.png")
+	elif [ "$category" == "mathematics" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-mathematics.png")
+	elif [ "$category" == "multimedia" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-multimedia.png")
+	elif [ "$category" == "office" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-office.png")
+	elif [ "$category" == "puzzles" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-internet.png")
+	elif [ "$category" == "internet" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-puzzles.png")
+	elif [ "$category" == "science" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-science.png")
+	elif [ "$category" == "system" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-system.png")
+	elif [ "$category" == "utilities" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-utilities.png")
+	elif [ "$category" == "utils" ]; then
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-utilities.png")
+	else
+		categoryIcon=$( echo "/usr/share/icons/Paper/512x512/categories/applications-other.png")
+	fi
+}
+function versionCheck() {
+	echo $category
+	echo $categoryIcon
+	currentVersion=$(apt-cache policy $package)
+	currentVersion=$(awk '{for(i=1;i<=NF;i++) if ($i=="Installed:") print $(i+1)}' <<< $currentVersion) && echo currentVersion: $currentVersion
+	echo $version
+	if [ $currentVersion == $version ]; then
+		if [ $iconEX == "true" ];then
+			notify-send --icon="$package" "Downloads" "$package is installed and doesn't need updated. So, were moving it to the Trash."
+		else
+			echo $categoryIcon
+			notify-send --icon="$categoryIcon" "Downloads" "$categoryIcon is installed and doesn't need updated. So, were moving it to the Trash."
+		fi
+		#mv $FILES /home/$user/.local/share/Trash/files/ #FIXME Uncomment me
+		exit
+	elif [ $currentVersion != $version ];then #UpdateAvalible
+		echo "needs updated"
+		if [ $iconEX == "true" ];then
+			notify-send --icon="$package" "Updates Avilible" "You have downloaded updates for $package, were perapeing to install them."
+		else
+			echo $categoryIcon
+			notify-send --icon="$categoryIcon" "Updates Avilible" "You have downloaded updates for $package, were perapeing to install them."
+		fi
+	elif [ $currentVersion == "N: Unable to locate package $package" ];then #Program not installed
+		echo "Program Not installed"
+	fi
+
+
+}
+
+function sub() {
+	echo 1
+	#sudo dpkg -i $FILES
+}
+
+function install() {
+
+	gksudo -m "Enter your Password to install <b>$package</b>." -- sub
+}
+
+function UI1() {
+  if zenity --question --width=410 --title="BaseCamp DK | Install $package" \
+  	--icon-name=$package \
+  	--ok-label=Install \
+  	--cancel-label=Cancel \
+		--text="<b><big>$package</big></b>\n<span font='8'>$version | $installedSize KB</span>\n<small>——————————————————————————————————</small>\n<small>$description</small>\n\n<span color='#b8babf' font='7'>$package is from an unidentified developer ($maintainer) and your security can not be insured.</span>"
+	then
+		echo contunie
+	else
+		exit
+	fi
+}
+function UI2() { #FIXME replace all gdebi icon with new icon
+  if zenity --question --width=410 --title="BaseCamp DK | Install $package" \
+  	--icon-name=gdebi \
+  	--ok-label=Install \
+  	--cancel-label=Cancel \
+		--text="<b><big>$package</big></b>\n<span font='8'>$version | $installedSize KB</span>\n<small>——————————————————————————————————</small>\n<small>$description</small>\n\n<span color='#b8babf' font='7'>$package is from an unidentified developer ($maintainer) and your security can not be insured.</span>"
+	then
+		echo contunie
+	else
+		exit
+	fi
+}
+
+#FIXME make sure this works for multiple users in firefox
+mozilla0=$(echo "/tmp/mozilla_$user""0") && echo $mozilla0
+mozilla1=$(echo "/tmp/mozilla_$user""1") && echo $mozilla1
+
+#FIXME change "$mozilla0" to "/home/$user/Downloads/"
+find $mozilla0 -name '*.deb' -mmin -30 -print0 |
+while IFS= read -r -d $'\0' FILES; do
+  echo $FILE
+  gatherDebInfo
+  fixLenth
+  cleanCharacters
+  #copyright
+  virusScan
+	searchIcon
+	categoryIcon
+	#versionCheck
+	if [ $iconEX == "true" ];then
+		UI1
+	else
+		UI2
+	fi
+	install
+done

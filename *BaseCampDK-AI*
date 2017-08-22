@@ -1,0 +1,86 @@
+#!/bin/sh
+#This file is inactive and needs to be re-based
+
+#Select File########################################
+FILE=`zenity --file-selection \
+--title="BaseCamp DK | Application Installer" \
+--height=200 \
+--width=200`
+
+
+case $? in
+         0)
+                echo "\"$FILE\" selected."
+
+#Check file Type#
+if [ ${FILE: -4} == ".deb" ]
+then
+
+
+#Ask for passcode & Install#
+Package=$(dpkg-deb -f "$FILE" Package)
+Version=$(dpkg-deb -f "$FILE" Version)
+Description=$(dpkg-deb -f "$FILE" Description)
+InstalledSize=$(dpkg-deb -f "$FILE" Installed-Size)
+Maintainer=$(dpkg-deb -f "$FILE" Maintainer)
+
+
+
+zenity --question --width=410 --title="BaseCamp DK | Install $Package" \
+--ok-label=Install \
+--cancel-label=Cancel \
+--text="<b><big>$Package</big></b>\n<span font='8'>$Version | $InstalledSize KB</span>\n<small>——————————————————————————————————</small>\n<small>$Description</small>\n\n<span color='#b8babf' font='8'>Note: $Package is from an unidentified developer and your security can not be insured. This does not mean it is unsafe, but that we dont know its contents.</span>"
+
+if [ $? = 0 ]; then
+gksudo dpkg -i $FILE
+
+#Gernerate Basename#
+filename="$FILE"
+basename "$filename"
+
+#Install Complete#
+
+zenity --info --title="BaseCamp DK | Successfull Install" --text="<b><big>$Package has successfully installed</big></b>\n<span color='#b8babf' font='8'>$Version | $InstalledSize KB</span>" \
+--ok-label="Gucci"
+if [ $? = 0 ]; then
+    $Package
+else
+    exit
+fi
+
+
+else
+    exit
+fi
+
+
+
+#Wrong File Type#
+else
+zenity --error \
+--text="This file is not a DEB file. \n\"$FILE\"" \
+--title="BaseCamp DK | Application Installer"
+fi
+;;
+#File Select End####################################
+
+
+
+#Errors#############################################
+
+#No file Selected#
+         1)
+zenity --error \
+--text="No file has selected." \
+--title="BaseCamp DK | Application Installer"
+;;
+
+#Unexpected Error#
+        -1)
+zenity --error \
+--text="An unexpected error has occurred. \n\"$FILE\"" \
+--title="BaseCamp DK | Application Installer"
+;;
+esac
+#Errors End#########################################
+#Scipt End##########################################

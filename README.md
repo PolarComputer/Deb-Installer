@@ -11,5 +11,4 @@ An Automatic Debian file installer. The `scanner` files is the only file need an
 ## Process
 One of the first things it does is check to see if the package has all ready been installed. if so it checks the version of the installed version and the new downloaded version. If the version numbers are diffenre it will automatiiclly update the application and just needs your passcode. If the application is already installed and the downloaded is the same version all reasdy installed it will delete the file and move it to the trashcan. If the package snt installed the system will gather info about it and give it to you asking for the install.
 <br>
-<hr>
 ### [Main Site](http://PolarComputersInc.com)   |   [Gitter](https://gitter.im/Polar-OS/Deb-Installer)   |   [PolarOS](http://PolarComputersInc.com/PolarOS)
